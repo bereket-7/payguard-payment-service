@@ -1,5 +1,25 @@
 spring:
   application:
     name: payguard-payment-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/payguard_payments}
+    username: ${SPRING_DATASOURCE_USERNAME:payguard}
+    password: ${SPRING_DATASOURCE_PASSWORD:payguard_secret}
+  jpa:
+    open-in-view: false
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${PAYGUARD_JWKS_URI:http://localhost:8086/.well-known/jwks.json}
 server:
   port: 8082
+management:
+  endpoints.web.exposure.include: health,info,metrics,prometheus
+payguard:
+  fraud:
+    base-url: ${FRAUD_ENGINE_BASE_URL:http://localhost:8083}
+    timeout-ms: ${FRAUD_ENGINE_TIMEOUT_MS:200}
+    fallback-approve-max-amount-minor: ${FRAUD_FALLBACK_APPROVE_MAX_AMOUNT_MINOR:10000}
