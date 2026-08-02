@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: payguard-payment-service
-server:
-  port: 8082
