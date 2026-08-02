@@ -9,6 +9,8 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   security:
     oauth2:
       resourceserver:
@@ -23,3 +25,6 @@ payguard:
     base-url: ${FRAUD_ENGINE_BASE_URL:http://localhost:8083}
     timeout-ms: ${FRAUD_ENGINE_TIMEOUT_MS:200}
     fallback-approve-max-amount-minor: ${FRAUD_FALLBACK_APPROVE_MAX_AMOUNT_MINOR:10000}
+  outbox:
+    poll-interval-ms: ${PAYGUARD_OUTBOX_POLL_INTERVAL_MS:1000}
+    batch-size: ${PAYGUARD_OUTBOX_BATCH_SIZE:50}
