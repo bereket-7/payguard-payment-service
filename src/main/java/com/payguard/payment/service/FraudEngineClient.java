@@ -1,1 +1,66 @@
-package com.payguard.payment.service; import io.github.resilience4j.circuitbreaker.*; import java.time.Duration; import java.util.*; import org.springframework.beans.factory.annotation.Value; import org.springframework.stereotype.Component; import org.springframework.web.client.RestClient; @Component public class FraudEngineClient { public record Decision(double score,String decision){} private final RestClient client; private final CircuitBreaker breaker; private final long threshold; public FraudEngineClient(RestClient.Builder builder,CircuitBreakerRegistry registry,@Value("${payguard.fraud.base-url}") String url,@Value("${payguard.fraud.timeout-ms}") long timeout,@Value("${payguard.fraud.fallback-approve-max-amount-minor}") long threshold){client=builder.baseUrl(url).requestFactory(new org.springframework.http.client.SimpleClientHttpRequestFactory(){ {setConnectTimeout(Duration.ofMillis(timeout));setReadTimeout(Duration.ofMillis(timeout));} }).build();breaker=registry.circuitBreaker("fraudEngine");this.threshold=threshold;} public Decision score(String id,String merchant,long amount,String currency){try{return CircuitBreaker.decorateSupplier(breaker,()->client.post().uri("/internal/v1/score").body(Map.of("transaction_id",id,"merchant_id",merchant,"amount_minor",amount,"currency",currency)).retrieve().body(Decision.class)).get();}catch(Exception ignored){return new Decision(-1,amount<=threshold?"APPROVE":"REVIEW");}} }
+package com.payguard.payment.service;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import java.time.Duration;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+@Component
+public class FraudEngineClient {
+
+    public record Decision(double score, String decision) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ScoreResponse(
+            @JsonProperty("transaction_id") String transactionId,
+            double score,
+            String decision) {
+    }
+
+    private final RestClient client;
+    private final CircuitBreaker breaker;
+    private final long threshold;
+
+    public FraudEngineClient(
+            RestClient.Builder builder,
+            CircuitBreakerRegistry registry,
+            @Value("${payguard.fraud.base-url}") String url,
+            @Value("${payguard.fraud.timeout-ms}") long timeout,
+            @Value("${payguard.fraud.fallback-approve-max-amount-minor}") long threshold) {
+        client = builder.baseUrl(url)
+                .requestFactory(new org.springframework.http.client.SimpleClientHttpRequestFactory() {
+                    {
+                        setConnectTimeout(Duration.ofMillis(timeout));
+                        setReadTimeout(Duration.ofMillis(timeout));
+                    }
+                })
+                .build();
+        breaker = registry.circuitBreaker("fraudEngine");
+        this.threshold = threshold;
+    }
+
+    public Decision score(String id, String merchant, long amount, String currency) {
+        try {
+            return CircuitBreaker.decorateSupplier(breaker, () -> {
+                ScoreResponse response = client.post()
+                        .uri("/internal/v1/score")
+                        .body(Map.of(
+                                "transaction_id", id,
+                                "merchant_id", merchant,
+                                "amount_minor", amount,
+                                "currency", currency))
+                        .retrieve()
+                        .body(ScoreResponse.class);
+                return new Decision(response.score(), response.decision());
+            }).get();
+        } catch (Exception ignored) {
+            return new Decision(-1, amount <= threshold ? "APPROVE" : "REVIEW");
+        }
+    }
+}
