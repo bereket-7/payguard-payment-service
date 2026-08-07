@@ -11,6 +11,8 @@ spring:
     enabled: true
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      schema.registry.url: ${SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL:http://localhost:8081}
   security:
     oauth2:
       resourceserver:
@@ -21,6 +23,8 @@ server:
 management:
   endpoints.web.exposure.include: health,info,metrics,prometheus
 payguard:
+  internal:
+    service-token: ${PAYGUARD_INTERNAL_SERVICE_TOKEN:}
   fraud:
     base-url: ${FRAUD_ENGINE_BASE_URL:http://localhost:8083}
     timeout-ms: ${FRAUD_ENGINE_TIMEOUT_MS:200}
