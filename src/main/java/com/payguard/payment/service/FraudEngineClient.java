@@ -8,10 +8,13 @@ import java.time.Duration;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 @Component
 public class FraudEngineClient {
+
+    public static final String INTERNAL_TOKEN_HEADER = "X-PayGuard-Internal-Token";
 
     public record Decision(double score, String decision) {
     }
@@ -26,13 +29,15 @@ public class FraudEngineClient {
     private final RestClient client;
     private final CircuitBreaker breaker;
     private final long threshold;
+    private final String internalServiceToken;
 
     public FraudEngineClient(
             RestClient.Builder builder,
             CircuitBreakerRegistry registry,
             @Value("${payguard.fraud.base-url}") String url,
             @Value("${payguard.fraud.timeout-ms}") long timeout,
-            @Value("${payguard.fraud.fallback-approve-max-amount-minor}") long threshold) {
+            @Value("${payguard.fraud.fallback-approve-max-amount-minor}") long threshold,
+            @Value("${payguard.internal.service-token:}") String internalServiceToken) {
         client = builder.baseUrl(url)
                 .requestFactory(new org.springframework.http.client.SimpleClientHttpRequestFactory() {
                     {
@@ -43,14 +48,17 @@ public class FraudEngineClient {
                 .build();
         breaker = registry.circuitBreaker("fraudEngine");
         this.threshold = threshold;
+        this.internalServiceToken = internalServiceToken;
     }
 
     public Decision score(String id, String merchant, long amount, String currency) {
         try {
             return CircuitBreaker.decorateSupplier(breaker, () -> {
-                ScoreResponse response = client.post()
-                        .uri("/internal/v1/score")
-                        .body(Map.of(
+                RestClient.RequestBodySpec request = client.post().uri("/internal/v1/score");
+                if (StringUtils.hasText(internalServiceToken)) {
+                    request = request.header(INTERNAL_TOKEN_HEADER, internalServiceToken);
+                }
+                ScoreResponse response = request.body(Map.of(
                                 "transaction_id", id,
                                 "merchant_id", merchant,
                                 "amount_minor", amount,
