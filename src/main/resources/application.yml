@@ -25,6 +25,9 @@ payguard:
     base-url: ${FRAUD_ENGINE_BASE_URL:http://localhost:8083}
     timeout-ms: ${FRAUD_ENGINE_TIMEOUT_MS:200}
     fallback-approve-max-amount-minor: ${FRAUD_FALLBACK_APPROVE_MAX_AMOUNT_MINOR:10000}
+  stripe:
+    api-key: ${STRIPE_API_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
   outbox:
     poll-interval-ms: ${PAYGUARD_OUTBOX_POLL_INTERVAL_MS:1000}
     batch-size: ${PAYGUARD_OUTBOX_BATCH_SIZE:50}
