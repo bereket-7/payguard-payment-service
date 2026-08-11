@@ -44,7 +44,7 @@ public class TransactionReviewController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('payment:review')")
+    @PreAuthorize("hasAuthority('SCOPE_payment:review')")
     public Map<String, Object> approve(
             @PathVariable String id,
             @Valid @RequestBody ApproveRequest request,
@@ -54,7 +54,7 @@ public class TransactionReviewController {
     }
 
     @PostMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('payment:review')")
+    @PreAuthorize("hasAuthority('SCOPE_payment:review')")
     public Map<String, Object> reject(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
         Transaction tx = reviews.reject(id, merchant(jwt), jwt.getSubject());
         return PaymentController.view(tx);
