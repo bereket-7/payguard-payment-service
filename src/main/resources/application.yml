@@ -35,3 +35,10 @@ payguard:
   outbox:
     poll-interval-ms: ${PAYGUARD_OUTBOX_POLL_INTERVAL_MS:1000}
     batch-size: ${PAYGUARD_OUTBOX_BATCH_SIZE:50}
+    # Attempts before an entry is copied to <topic>.dlq and skipped. With the 1s base and the
+    # doubling backoff, 8 attempts spans roughly four minutes before giving up.
+    max-attempts: ${PAYGUARD_OUTBOX_MAX_ATTEMPTS:8}
+    base-backoff-ms: ${PAYGUARD_OUTBOX_BASE_BACKOFF_MS:1000}
+    # Bounds the KafkaTemplate future the relay blocks on; without it a partitionless topic or an
+    # unreachable broker parks the scheduler thread indefinitely.
+    send-timeout-ms: ${PAYGUARD_OUTBOX_SEND_TIMEOUT_MS:10000}
