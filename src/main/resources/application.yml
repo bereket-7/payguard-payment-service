@@ -17,7 +17,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${PAYGUARD_JWKS_URI:http://localhost:8086/.well-known/jwks.json}
+          jwk-set-uri: ${PAYGUARD_JWKS_URI:http://localhost:8180/realms/payguard/protocol/openid-connect/certs}
+          issuer-uri: ${PAYGUARD_JWT_ISSUER:http://localhost:8180/realms/payguard}
 server:
   port: 8082
 management:
